@@ -1062,6 +1062,7 @@ fn test_cache_query_empty_json() {
         .args(["cache", "query", "--network", "testnet", "--json"])
         .env("HOME", &home)
         .env("USERPROFILE", &home)
+        .env("RUST_LOG", "error")
         .output()
         .expect("failed to run cache query");
     assert!(output.status.success());
@@ -1078,6 +1079,7 @@ fn test_cache_query_json_flag_accepted() {
         .args(["cache", "query", "--network", "testnet", "--json"])
         .env("HOME", &home)
         .env("USERPROFILE", &home)
+        .env("RUST_LOG", "error")
         .output()
         .expect("failed to run cache query");
     assert!(output.status.success());
