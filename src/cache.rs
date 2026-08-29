@@ -105,11 +105,12 @@ fn db_path() -> AppResult<PathBuf> {
     Ok(data_dir()?.join("cache.db"))
 }
 
-/// Open a connection to the cache database and ensure the schema exists.
-fn open_db() -> AppResult<Connection> {
-    let path = db_path()?;
-    let conn = Connection::open(&path)?;
-
+/// Create the `estimates` table (and tune journal mode) on an already-open
+/// connection if it does not exist yet.
+///
+/// Centralized so both the normal cache path and callers that open the
+/// database directly (e.g. test helpers) create an identical schema.
+pub fn ensure_cache_schema(conn: &Connection) -> AppResult<()> {
     // WAL lets concurrent readers and writers coexist, and busy_timeout makes
     // contending writers wait instead of failing with SQLITE_BUSY.
     conn.execute_batch(
@@ -129,7 +130,14 @@ fn open_db() -> AppResult<Connection> {
             PRIMARY KEY (wasm_hash, function, args_hash)
         );",
     )?;
+    Ok(())
+}
 
+/// Open a connection to the cache database and ensure the schema exists.
+fn open_db() -> AppResult<Connection> {
+    let path = db_path()?;
+    let conn = Connection::open(&path)?;
+    ensure_cache_schema(&conn)?;
     Ok(conn)
 }
 

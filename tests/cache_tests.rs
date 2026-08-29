@@ -296,7 +296,8 @@ fn test_verify_cache_ignores_non_json_files() {
     with_temp_home(|tmp| {
         cache::save_estimate("h1", "f1", &[], "testnet", 1, 100, 10, 5).expect("save f1");
 
-        let dir = tmp.join(".soroban-cost-estimator").join("cache");
+        let dir = tmp.join(".soroban-cost-estimator");
+        std::fs::create_dir_all(&dir).expect("create data dir");
         std::fs::write(dir.join("notes.txt"), "not a cache entry").expect("write txt");
 
         let statuses = cache::verify_cache().expect("verify");
@@ -766,6 +767,9 @@ fn insert_raw_row(
     std::fs::create_dir_all(&dir).expect("create data dir");
     let db = dir.join("cache.db");
     let conn = rusqlite::Connection::open(&db).expect("open cache db");
+    // Ensure the schema exists in this exact database before writing rows
+    // directly.
+    cache::ensure_cache_schema(&conn).expect("ensure cache schema");
 
     conn.execute(
         "INSERT OR REPLACE INTO estimates \

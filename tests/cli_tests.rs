@@ -15,6 +15,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use sha2::Digest;
+use soroban_cost_estimator::cache;
 
 /// An RPC URL that is guaranteed not to answer: port 1 on loopback.
 /// Used to drive the network error path without leaving the machine.
@@ -490,6 +491,9 @@ fn seed_cache_entry(home: &Path, timestamp: &str) {
     std::fs::create_dir_all(&dir).expect("create data dir");
     let db = dir.join("cache.db");
     let conn = rusqlite::Connection::open(&db).expect("open cache db");
+    // Ensure the schema exists in this exact database before writing rows
+    // directly (the CLI reads the same path, so they must match).
+    cache::ensure_cache_schema(&conn).expect("ensure cache schema");
 
     conn.execute(
         "INSERT OR REPLACE INTO estimates \
